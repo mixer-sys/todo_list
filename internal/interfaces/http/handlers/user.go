@@ -13,7 +13,7 @@ import (
 
 type UserRepository interface {
 	GenerateJWTToken(user *models.User, cfg *config.Config) (string, error)
-	Login(ctx context.Context, user *models.User) (*models.User, error)
+	Login(ctx context.Context, user *models.User, cfg *config.Config) (string, error)
 	Signup(ctx context.Context, user *models.User) error
 	CreateUser(ctx context.Context, user *models.User) error
 	GetUserByID(ctx context.Context, id uint) (*models.User, error)
@@ -30,24 +30,22 @@ func NewUserHandler(db UserRepository) *UserHandler {
 	return &UserHandler{db: db}
 }
 
-func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	loggedInUser, err := uh.db.Login(r.Context(), &user)
+	token, err := uh.db.Login(r.Context(), &user, cfg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
-	cfg := &config.Config{} // TODO: Replace with actual config initialization if needed
-	token, err := uh.db.GenerateJWTToken(loggedInUser, cfg)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err.Error() == "invalid password" {
+			http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "Internal server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

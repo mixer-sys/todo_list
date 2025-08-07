@@ -20,6 +20,7 @@ CREATE TABLE tasks (
     deleted_at TIMESTAMP,
     user_id INT REFERENCES users(id) ON DELETE CASCADE
 );
+
 INSERT INTO users (username, email, created_at, updated_at, password) VALUES
 ('user1', 'user1@example.com', NOW(), NOW(), 'password1'),
 ('user2', 'user2@example.com', NOW(), NOW(), 'password2'),

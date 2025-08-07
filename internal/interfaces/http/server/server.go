@@ -6,16 +6,19 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 	"todo_list/config"
 
 	router "todo_list/internal/infrastructure/adapters/router"
+	"todo_list/internal/interfaces/http/repository"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func LoggerMiddleware(next http.Handler) http.Handler {
+func TokenMiddleware(cfg *config.Config, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		slog.Info("request",
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
@@ -23,20 +26,48 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			slog.String("user_agent", r.UserAgent()),
 		)
 
-		next.ServeHTTP(w, r)
+		if r.URL.Path == "/users/login" || r.URL.Path == "/users/signup" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token = strings.TrimPrefix(token, "Bearer ")
+
+		userID, err := isValidToken(token, cfg)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "userID", userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func isValidToken(tokenStr string, cfg *config.Config) (uint, error) {
+	claims, err := repository.ExtractClaims(tokenStr, cfg)
+	if err != nil {
+		return 0, fmt.Errorf("invalid token: %w", err)
+	}
+	return claims.UserID, nil
 }
 
 func Run(ctx context.Context,
 	dataBase *pgxpool.Pool, cfg *config.Config) (
 	*http.Server, error) {
-	r := router.NewRouter(dataBase)
+	r := router.NewRouter(dataBase, cfg)
 
 	address := ":" + cfg.ServerPort
 
 	srv := &http.Server{
 		Addr:              address,
-		Handler:           LoggerMiddleware(r),
+		Handler:           TokenMiddleware(cfg, r),
 		ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeoutSecond) * time.Second,
 	}
 
