@@ -1,15 +1,10 @@
-FROM golang:1.24-alpine AS builder
-RUN apk add --no-cache gcc musl-dev
+FROM golang:1.24.4-alpine
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-ENV CGO_ENABLED=1
 RUN go build -o /todo_list ./cmd/app/
-FROM alpine:latest
-WORKDIR /
-COPY --from=builder /todo_list .
-RUN apk --no-cache add sqlite-libs
+RUN set -a && . /app/.env && set +a
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 EXPOSE 8080
-VOLUME [ "/data" ]
-CMD ["./todo_list"]
+CMD ["/todo_list"]
