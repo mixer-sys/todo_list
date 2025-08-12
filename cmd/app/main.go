@@ -39,7 +39,7 @@ func main() {
 	go func() {
 		srv, err = server.Run(ctx, dataBase.Pool, cfg)
 		if err != nil {
-			log.Fatalf("Failed to start server: %v", err)
+			log.Fatalf("Failed to start server: %s", err.Error())
 		}
 	}()
 

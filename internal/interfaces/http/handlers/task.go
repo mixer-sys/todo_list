@@ -13,10 +13,11 @@ import (
 
 type TaskRepository interface {
 	CreateTask(ctx context.Context, task *models.Task) error
-	GetTaskByID(ctx context.Context, id uint) (*models.Task, error)
+	GetTaskByID(ctx context.Context, id, userid uint) (*models.Task, error)
 	UpdateTask(ctx context.Context, task *models.Task) error
-	DeleteTask(ctx context.Context, id uint) error
+	DeleteTask(ctx context.Context, id, userid uint) error
 }
+
 type TaskHandler struct {
 	db TaskRepository
 }
@@ -29,14 +30,27 @@ func (th *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task models.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+
 		return
 	}
+
 	task.CreatedAt = time.Now()
 	task.UpdatedAt = time.Now()
+
+	userID, ok := r.Context().Value("userID").(uint)
+
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+
+		return
+	}
+
+	task.UserID = uint(userID)
 
 	err := th.db.CreateTask(r.Context(), &task)
 	if err != nil {
 		http.Error(w, "Failed to create task", http.StatusInternalServerError)
+
 		return
 	}
 
@@ -44,6 +58,7 @@ func (th *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(task)
 	if err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+
 		return
 	}
 }
@@ -57,7 +72,15 @@ func (th *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := th.db.GetTaskByID(r.Context(), uint(taskIDInt))
+	userID, ok := r.Context().Value("userID").(uint)
+
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+
+		return
+	}
+
+	task, err := th.db.GetTaskByID(r.Context(), uint(taskIDInt), userID)
 	if err != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
@@ -75,9 +98,21 @@ func (th *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	var task models.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+
 		return
 	}
+
 	task.UpdatedAt = time.Now()
+
+	userID, ok := r.Context().Value("userID").(uint)
+
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+
+		return
+	}
+
+	task.UserID = uint(userID)
 
 	err := th.db.UpdateTask(r.Context(), &task)
 	if err != nil {
@@ -102,7 +137,15 @@ func (th *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = th.db.DeleteTask(r.Context(), uint(taskIDInt))
+	userID, ok := r.Context().Value("userID").(uint)
+
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+
+		return
+	}
+
+	err = th.db.DeleteTask(r.Context(), uint(taskIDInt), userID)
 	if err != nil {
 		http.Error(w, "Failed to delete task", http.StatusInternalServerError)
 		return

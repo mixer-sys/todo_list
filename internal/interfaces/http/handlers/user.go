@@ -19,9 +19,10 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id uint) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id uint) error
-	ListUsers(ctx context.Context) ([]models.User, error)
+
 	ListTasksByUserID(ctx context.Context, userID uint) ([]models.Task, error)
 }
+
 type UserHandler struct {
 	db UserRepository
 }
@@ -79,7 +80,18 @@ func (uh *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := uh.db.GetUserByID(r.Context(), uint(id))
+	userID, ok := r.Context().Value("userId").(uint)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if uint(id) != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	user, err := uh.db.GetUserByID(r.Context(), uint(userID))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -94,6 +106,17 @@ func (uh *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value("userId").(uint)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if user.ID != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -115,6 +138,17 @@ func (uh *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, ok := r.Context().Value("userId").(uint)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if uint(id) != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	err = uh.db.DeleteUser(r.Context(), uint(id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -124,22 +158,22 @@ func (uh *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (uh *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := uh.db.ListUsers(r.Context())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
-}
-
 func (uh *UserHandler) ListTasksByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	userIDCtx, ok := r.Context().Value("userId").(uint)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if userID != int(userIDCtx) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 

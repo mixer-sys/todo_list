@@ -31,7 +31,6 @@ func NewRouter(dataBase *pgxpool.Pool, cfg *config.Config) *mux.Router {
 	r.HandleFunc("/users/{id:[0-9]+}", userHandler.GetUserByID).Methods("GET")
 	r.HandleFunc("/users/{id:[0-9]+}", userHandler.UpdateUser).Methods("PUT")
 	r.HandleFunc("/users/{id:[0-9]+}", userHandler.DeleteUser).Methods("DELETE")
-	r.HandleFunc("/users", userHandler.ListUsers).Methods("GET")
 	r.HandleFunc("/users/{id:[0-9]+}/tasks", userHandler.ListTasksByUserID).Methods("GET")
 
 	return r

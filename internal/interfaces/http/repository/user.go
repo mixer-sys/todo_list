@@ -116,25 +116,6 @@ func (r *SQLUserRepository) DeleteUser(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (r *SQLUserRepository) ListUsers(ctx context.Context) ([]models.User, error) {
-	query := "SELECT id, username, password, created_at, updated_at, email FROM users"
-	rows, err := r.db.Query(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
-	defer rows.Close()
-
-	var users []models.User
-	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt, &user.UpdatedAt, &user.Email); err != nil {
-			return nil, fmt.Errorf("failed to scan user: %w", err)
-		}
-		users = append(users, user)
-	}
-	return users, nil
-}
-
 func (r *SQLUserRepository) ListTasksByUserID(ctx context.Context, userID uint) ([]models.Task, error) {
 	query := "SELECT id, name, description, status, created_at, updated_at, user_id FROM tasks WHERE user_id = $1"
 	rows, err := r.db.Query(ctx, query, userID)

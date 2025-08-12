@@ -22,9 +22,9 @@ CREATE TABLE tasks (
 );
 
 INSERT INTO users (username, email, created_at, updated_at, password) VALUES
-('user1', 'user1@example.com', NOW(), NOW(), 'password1'),
-('user2', 'user2@example.com', NOW(), NOW(), 'password2'),
-('user3', 'user3@example.com', NOW(), NOW(), 'password3');
+('user1', 'user1@example.com', NOW(), NOW(), '$2a$10$RWpNi.ka9VASMZpAEUygyuwLPMnA4/5u2NbmnKcuG5bNqHzFU5TPC'),
+('user2', 'user2@example.com', NOW(), NOW(), '$2a$10$RWpNi.ka9VASMZpAEUygyuwLPMnA4/5u2NbmnKcuG5bNqHzFU5TPC'),
+('user3', 'user3@example.com', NOW(), NOW(), '$2a$10$RWpNi.ka9VASMZpAEUygyuwLPMnA4/5u2NbmnKcuG5bNqHzFU5TPC');
 
 INSERT INTO tasks (name, description, status, created_at, updated_at, user_id) VALUES
 ('Заметка 1', 'Описание заметки 1', 'pending', NOW(), NOW(), 1),
