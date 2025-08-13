@@ -21,6 +21,7 @@ func NewRouter(dataBase *pgxpool.Pool, cfg *config.Config) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/tasks", taskHandler.CreateTask).Methods("POST")
+	r.HandleFunc("/tasks", taskHandler.ListTasks).Methods("GET")
 	r.HandleFunc("/tasks/{id:[0-9]+}", taskHandler.GetTask).Methods("GET")
 	r.HandleFunc("/tasks/{id:[0-9]+}", taskHandler.UpdateTask).Methods("PUT")
 	r.HandleFunc("/tasks/{id:[0-9]+}", taskHandler.DeleteTask).Methods("DELETE")
@@ -28,10 +29,8 @@ func NewRouter(dataBase *pgxpool.Pool, cfg *config.Config) *mux.Router {
 		userHandler.Login(w, r, cfg)
 	}).Methods("POST")
 	r.HandleFunc("/users/signup", userHandler.Signup).Methods("POST")
-	r.HandleFunc("/users/{id:[0-9]+}", userHandler.GetUserByID).Methods("GET")
-	r.HandleFunc("/users/{id:[0-9]+}", userHandler.UpdateUser).Methods("PUT")
-	r.HandleFunc("/users/{id:[0-9]+}", userHandler.DeleteUser).Methods("DELETE")
-	r.HandleFunc("/users/{id:[0-9]+}/tasks", userHandler.ListTasksByUserID).Methods("GET")
+	r.HandleFunc("/users", userHandler.GetUserInfo).Methods("GET")
+	r.HandleFunc("/users", userHandler.UpdateUser).Methods("PUT")
 
 	return r
 }

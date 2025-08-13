@@ -4,11 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"todo_list/config"
 	"todo_list/internal/domain/models"
-
-	"github.com/gorilla/mux"
 )
 
 type UserRepository interface {
@@ -16,11 +13,8 @@ type UserRepository interface {
 	Login(ctx context.Context, user *models.User, cfg *config.Config) (string, error)
 	Signup(ctx context.Context, user *models.User) error
 	CreateUser(ctx context.Context, user *models.User) error
-	GetUserByID(ctx context.Context, id uint) (*models.User, error)
+	GetUserInfo(ctx context.Context, id uint) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
-	DeleteUser(ctx context.Context, id uint) error
-
-	ListTasksByUserID(ctx context.Context, userID uint) ([]models.Task, error)
 }
 
 type UserHandler struct {
@@ -72,26 +66,15 @@ func (uh *UserHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (uh *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
+func (uh *UserHandler) GetUserInfo(w http.ResponseWriter, r *http.Request) {
 
-	userID, ok := r.Context().Value("userId").(uint)
+	userID, ok := r.Context().Value("userID").(uint)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	if uint(id) != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
-	user, err := uh.db.GetUserByID(r.Context(), uint(userID))
+	user, err := uh.db.GetUserInfo(r.Context(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -109,16 +92,13 @@ func (uh *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, ok := r.Context().Value("userId").(uint)
+	userID, ok := r.Context().Value("userID").(uint)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	if user.ID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
+	user.ID = userID
 
 	err = uh.db.UpdateUser(r.Context(), &user)
 	if err != nil {
@@ -128,61 +108,4 @@ func (uh *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(user)
-}
-
-func (uh *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-
-	userID, ok := r.Context().Value("userId").(uint)
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	if uint(id) != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
-	err = uh.db.DeleteUser(r.Context(), uint(id))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (uh *UserHandler) ListTasksByUserID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-
-	userIDCtx, ok := r.Context().Value("userId").(uint)
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	if userID != int(userIDCtx) {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
-	tasks, err := uh.db.ListTasksByUserID(r.Context(), uint(userID))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tasks)
 }

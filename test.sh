@@ -1,1 +1,37 @@
-curl -X POST http://localhost:8080/tasks -H "Content-Type: application/json" -d '{"title": "New Task", "description": "Task description"}'; curl -X GET http://localhost:8080/tasks/1; curl -X PUT http://localhost:8080/tasks/1 -H "Content-Type: application/json" -d '{"title": "Updated Task", "description": "Updated description"}'; curl -X DELETE http://localhost:8080/tasks/1; curl -X POST http://localhost:8080/users/signup -H "Content-Type: application/json" -d '{"username": "newuser", "password": "password123"}'; curl -X POST http://localhost:8080/users/login -H "Content-Type: application/json" -d '{"username": "newuser", "password": "password123"}'; curl -X GET http://localhost:8080/users/1; curl -X PUT http://localhost:8080/users/1 -H "Content-Type: application/json" -d '{"username": "updateduser", "password": "newpassword123"}'; curl -X DELETE http://localhost:8080/users/1; curl -X GET http://localhost:8080/users; curl -X GET http://localhost:8080/users/1/tasks
+curl -i -k -X POST http://localhost:8080/users/signup \
+-H "Content-Type: application/json" \
+-d '{"username": "testuser", "password": "testpassword"}'
+
+token=$(curl -X POST http://localhost:8080/users/login \
+-H "Content-Type: application/json" \
+-d '{"username": "testuser", "password": "testpassword"}' | jq -r .token)
+
+curl -i -k -X GET http://localhost:8080/users \
+-H "Authorization: Bearer $token"
+
+curl -i -k -X PUT http://localhost:8080/users \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $token" \
+-d '{"username": "newusername", "password": "newpassword"}'
+
+curl -i -k -X GET http://localhost:8080/users \
+-H "Authorization: Bearer $token"
+
+curl -i -k -X POST http://localhost:8080/tasks \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $token" \
+-d '{"title": "New Task", "description": "Task description"}'
+
+curl -i -k -X GET http://localhost:8080/tasks \
+-H "Authorization: Bearer $token"
+
+curl -i -k -X GET http://localhost:8080/tasks/5 \
+-H "Authorization: Bearer $token"
+
+curl -i -k -X PUT http://localhost:8080/tasks/5 \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $token" \
+-d '{"title": "Updated Task", "description": "Updated task description"}'
+
+curl -i -k -X DELETE http://localhost:8080/tasks/5 \
+-H "Authorization: Bearer $token"

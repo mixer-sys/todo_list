@@ -13,9 +13,10 @@ import (
 
 type TaskRepository interface {
 	CreateTask(ctx context.Context, task *models.Task) error
-	GetTaskByID(ctx context.Context, id, userid uint) (*models.Task, error)
+	GetTask(ctx context.Context, id, userid uint) (*models.Task, error)
 	UpdateTask(ctx context.Context, task *models.Task) error
 	DeleteTask(ctx context.Context, id, userid uint) error
+	ListTasks(ctx context.Context, userID uint) ([]models.Task, error)
 }
 
 type TaskHandler struct {
@@ -45,7 +46,7 @@ func (th *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task.UserID = uint(userID)
+	task.UserID = userID
 
 	err := th.db.CreateTask(r.Context(), &task)
 	if err != nil {
@@ -80,7 +81,7 @@ func (th *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := th.db.GetTaskByID(r.Context(), uint(taskIDInt), userID)
+	task, err := th.db.GetTask(r.Context(), uint(taskIDInt), userID)
 	if err != nil {
 		http.Error(w, "Task not found", http.StatusNotFound)
 		return
@@ -95,6 +96,14 @@ func (th *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (th *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	taskID := vars["id"]
+	taskIDInt, err := strconv.Atoi(taskID)
+	if err != nil {
+		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		return
+	}
+
 	var task models.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -112,9 +121,10 @@ func (th *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task.UserID = uint(userID)
+	task.UserID = userID
+	task.ID = uint(taskIDInt)
 
-	err := th.db.UpdateTask(r.Context(), &task)
+	err = th.db.UpdateTask(r.Context(), &task)
 	if err != nil {
 		http.Error(w, "Failed to update task", http.StatusInternalServerError)
 		return
@@ -152,4 +162,22 @@ func (th *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (th *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value("userID").(uint)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	tasks, err := th.db.ListTasks(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(tasks)
 }
