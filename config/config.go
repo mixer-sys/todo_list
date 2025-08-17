@@ -20,6 +20,9 @@ type Config struct {
 	ReadHeaderTimeoutSecond int    `env:"READ_HEADER_TIMEOUT_SECOND" envDefault:"5"`
 	JWTSecretKey            string `env:"JWT_SECRET_KEY"             envDefault:"secret"`
 	ExpirationTimeHours     int    `env:"EXPIRATION_TIME_HOURS"     envDefault:"24"`
+	TelegramBotToken        string `env:"TELEGRAM_BOT_TOKEN"         envDefault:""`
+	TwoFAHost               string `env:"TWO_FA_HOST"                envDefault:"bot"`
+	TwoFAPort               string `env:"TWO_FA_PORT"                envDefault:"8080"`
 }
 
 func LoadConfig() (cfg *Config, err error) {

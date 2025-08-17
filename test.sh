@@ -9,13 +9,30 @@ token=$(curl -X POST http://localhost:8080/users/login \
 curl -i -k -X GET http://localhost:8080/users \
 -H "Authorization: Bearer $token"
 
+
 curl -i -k -X PUT http://localhost:8080/users \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $token" \
--d '{"username": "newusername", "password": "newpassword"}'
+-d '{"username": "newusername", "password": "newpassword", "enable_2fa": true, "tg_username": "somersno"}'
 
 curl -i -k -X GET http://localhost:8080/users \
 -H "Authorization: Bearer $token"
+
+curl -X POST http://localhost:8080/users/login \
+-H "Content-Type: application/json" \
+-d '{"username": "newusername", "password": "newpassword"}'
+
+curl -X POST http://localhost:8080/users/login \
+-H "Content-Type: application/json" \
+-d '{"username": "newusername", "password": "newpassword", "code": "123456"}'
+
+token=$(curl -X POST http://localhost:8080/users/login \
+-H "Content-Type: application/json" \
+-d '{"username": "newusername", "password": "newpassword"}' | jq -r .token)
+
+curl -i -k -X GET http://localhost:8080/users \
+-H "Authorization: Bearer $token"
+
 
 curl -i -k -X POST http://localhost:8080/tasks \
 -H "Content-Type: application/json" \
