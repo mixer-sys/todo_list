@@ -10,15 +10,27 @@ import (
 
 	"os"
 	"os/signal"
+
+	_ "net/http/pprof"
 )
 
 func main() {
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	logger := logger.New(cfg)
+
+	if cfg.PPROF {
+		go func() {
+			logger.Info("Starting pprof server on :6060")
+			if err := http.ListenAndServe(":6060", nil); err != nil {
+				log.Fatalf("pprof server failed: %v", err)
+			}
+		}()
+	}
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt)

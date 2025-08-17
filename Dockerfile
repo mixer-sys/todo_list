@@ -7,4 +7,5 @@ RUN go build -o /todo_list ./cmd/app/
 RUN set -a && . /app/.env && set +a
 RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 EXPOSE 8080
+EXPOSE 6060
 CMD ["/todo_list"]

@@ -23,6 +23,7 @@ type Config struct {
 	TelegramBotToken        string `env:"TELEGRAM_BOT_TOKEN"         envDefault:""`
 	TwoFAHost               string `env:"TWO_FA_HOST"                envDefault:"bot"`
 	TwoFAPort               string `env:"TWO_FA_PORT"                envDefault:"8080"`
+	PPROF                   bool   `env:"PPROF"                      envDefault:"false"`
 }
 
 func LoadConfig() (cfg *Config, err error) {

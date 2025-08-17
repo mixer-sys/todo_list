@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
 	"sync"
 	"time"
 	"todo_list/config"
@@ -14,6 +13,9 @@ import (
 	"golang.org/x/exp/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -68,12 +70,22 @@ func createKeyboard() tgbotapi.ReplyKeyboardMarkup {
 }
 
 func main() {
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("error load config: %v", err)
 	}
 
 	logger := logger.New(cfg)
+
+	if cfg.PPROF {
+		go func() {
+			logger.Info("Starting pprof server on :6061")
+			if err := http.ListenAndServe(":6061", nil); err != nil {
+				log.Fatalf("pprof server failed: %v", err)
+			}
+		}()
+	}
 
 	go server(cfg, logger)
 

@@ -6,4 +6,5 @@ COPY . .
 RUN go build -o /bot ./cmd/bot/
 RUN set -a && . /bot/.env && set +a
 EXPOSE 8081
+EXPOSE 6061
 CMD ["/bot"]
