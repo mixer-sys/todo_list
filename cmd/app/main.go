@@ -16,7 +16,7 @@ import (
 
 func main() {
 
-	cfg, err := config.LoadConfig()
+	cfg, err := config.MustLoad()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
@@ -67,8 +67,6 @@ func main() {
 
 		return
 	}
-
-	dataBase.Close()
 
 	logger.Info("Server shutdown complete")
 }

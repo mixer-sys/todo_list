@@ -26,7 +26,7 @@ type Config struct {
 	PPROF                   bool   `env:"PPROF"                      envDefault:"false"`
 }
 
-func LoadConfig() (cfg *Config, err error) {
+func MustLoad() (cfg *Config, err error) {
 	err = godotenv.Load()
 
 	if err != nil {

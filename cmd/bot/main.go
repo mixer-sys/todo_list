@@ -71,7 +71,7 @@ func createKeyboard() tgbotapi.ReplyKeyboardMarkup {
 
 func main() {
 
-	cfg, err := config.LoadConfig()
+	cfg, err := config.MustLoad()
 	if err != nil {
 		log.Fatalf("error load config: %v", err)
 	}
